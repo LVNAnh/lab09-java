@@ -26,7 +26,6 @@ public class UserService implements UserDetailsService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // Thêm annotation @Lazy để ngăn chặn circular dependency
     @Autowired
     @Lazy
     private AuthenticationManager authenticationManager;

@@ -20,7 +20,7 @@ public class ProductService {
         return productRepository.findAll();
     }
 
-    public Product getProductById(Long id) {
+    public Product getProductById(String id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
     }
@@ -40,7 +40,7 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public Product updateProduct(Long id, ProductDto productDto) {
+    public Product updateProduct(String id, ProductDto productDto) {
         Product product = getProductById(id);
 
         // Check if code is being changed and if it already exists
@@ -58,7 +58,7 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public Product patchProduct(Long id, ProductDto productDto) {
+    public Product patchProduct(String id, ProductDto productDto) {
         Product product = getProductById(id);
 
         // Only update non-null fields
@@ -90,7 +90,7 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public void deleteProduct(Long id) {
+    public void deleteProduct(String id) {
         Product product = getProductById(id);
         productRepository.delete(product);
     }

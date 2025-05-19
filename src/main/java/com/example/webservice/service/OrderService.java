@@ -35,12 +35,11 @@ public class OrderService {
         return orderRepository.findAll();
     }
 
-    public Order getOrderById(Long id) {
+    public Order getOrderById(String id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
     }
 
-    @Transactional
     public Order createOrder(OrderDto orderDto) {
         User currentUser = userService.getCurrentUser();
 
@@ -62,7 +61,7 @@ public class OrderService {
                             "Product not found with id: " + itemDto.getProductId()));
 
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
+            orderItem.setId(UUID.randomUUID().toString()); // Generate ID for MongoDB
             orderItem.setProduct(product);
             orderItem.setQuantity(itemDto.getQuantity());
             orderItem.setPrice(product.getPrice());
@@ -77,8 +76,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    @Transactional
-    public Order updateOrder(Long id, OrderDto orderDto) {
+    public Order updateOrder(String id, OrderDto orderDto) {
         Order order = getOrderById(id);
 
         // Clear existing items
@@ -96,7 +94,7 @@ public class OrderService {
                             "Product not found with id: " + itemDto.getProductId()));
 
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
+            orderItem.setId(UUID.randomUUID().toString()); // Generate ID for MongoDB
             orderItem.setProduct(product);
             orderItem.setQuantity(itemDto.getQuantity());
             orderItem.setPrice(product.getPrice());
@@ -110,7 +108,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public void deleteOrder(Long id) {
+    public void deleteOrder(String id) {
         Order order = getOrderById(id);
         orderRepository.delete(order);
     }
