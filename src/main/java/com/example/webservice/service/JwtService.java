@@ -1,10 +1,13 @@
 package com.example.webservice.service;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,10 +16,10 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret}")
+    @Value("${jwt.secret:defaultsecretkey012345678901234567890}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration}")
+    @Value("${jwt.expiration:86400000}")
     private int jwtExpirationMs;
 
     public String generateToken(UserDetails userDetails) {
@@ -25,12 +28,17 @@ public class JwtService {
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
+        System.out.println("Creating token for: " + subject);
+
+        // Create a proper signing key from the secret
+        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .signWith(key) // Use the key object instead of (algorithm, string)
                 .compact();
     }
 
@@ -53,7 +61,12 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
+        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     private Boolean isTokenExpired(String token) {

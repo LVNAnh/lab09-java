@@ -32,16 +32,30 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        try {
+            System.out.println("Attempting to load user with email: " + email);
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> {
+                        System.out.println("User not found with email: " + email);
+                        return new UsernameNotFoundException("User not found with email: " + email);
+                    });
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getPassword())
-                .authorities("USER")
-                .build();
+            System.out.println("User found with email: " + email);
+            System.out.println("Password from DB: " + user.getPassword());
+
+            return org.springframework.security.core.userdetails.User
+                    .withUsername(user.getEmail())
+                    .password(user.getPassword())
+                    .authorities("USER")
+                    .build();
+        } catch (Exception e) {
+            System.out.println("Error in loadUserByUsername: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
+    // Method for registering a new user
     public User register(RegisterRequest registerRequest) {
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             throw new BadRequestException("Email is already taken!");
@@ -56,20 +70,45 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
+    // Method for authentication
     public Authentication authenticate(LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(),
-                        loginRequest.getPassword()));
+        try {
+            System.out.println("Attempting to authenticate user with email: " + loginRequest.getEmail());
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        return authentication;
+            // Create the authentication token
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    loginRequest.getEmail(), loginRequest.getPassword());
+
+            try {
+                // Attempt authentication
+                Authentication authentication = authenticationManager.authenticate(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("Authentication successful for user: " + loginRequest.getEmail());
+                return authentication;
+            } catch (Exception e) {
+                System.out.println("Authentication failed for user: " + loginRequest.getEmail());
+                System.out.println("Authentication error: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
+        } catch (Exception e) {
+            System.out.println("Error in authenticate method: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
+    // Get current authenticated user
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+
+    // Helper method to get user by email
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElse(null);
     }
 }
